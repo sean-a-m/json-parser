@@ -43,7 +43,7 @@ impl Json for JsonTerminal {
     }
 
     fn get_path(&self, path: &str) -> Result<&Json, &'static str> {
-        println!("Getting {} on a JSON terminal",path);
+        println!("Getting {} on a JSON terminal", path);
         let error_string = "Something happened";
         Err(error_string)
     }
@@ -57,18 +57,18 @@ impl Json for JsonObject {
     fn get_value(&self) -> &str {
         "this is an object"
     }
-    
+
     fn get_type(&self) -> &JsonType {
         &self.json_type
     }
 
     fn get_path(&self, path: &str) -> Result<&Json, &'static str> {
-         println!("Getting key: {} on a JSON Object",path);
+        println!("Getting key: {} on a JSON Object", path);
         match self.val.get(&path.to_string()) {
             Some(result) => Ok(&**result),
             None => Err("Something happened"),
         }
-        
+
     }
 
     fn print_val(&self) -> () {
@@ -83,22 +83,22 @@ impl Json for JsonArray {
     fn get_value(&self) -> &str {
         "this is an array"
     }
-    
+
     fn get_type(&self) -> &JsonType {
         &self.json_type
     }
 
     fn get_path(&self, path: &str) -> Result<&Json, &'static str> {
         let index = path.parse::<usize>();
-        println!("Getting index: {} on a JSON array",path);
+        println!("Getting index: {} on a JSON array", path);
         if let Ok(i) = index {
             match self.val.get(i) {
                 Some(result) => Ok(&**result),
                 None => Err("Something happened"),
-            } 
+            }
         } else {
             Err("Something happened")
-        } 
+        }
     }
 
     fn print_val(&self) -> () {
@@ -110,15 +110,14 @@ impl Json for JsonArray {
 impl JsonObject {
     pub fn new() -> JsonObject {
         JsonObject {
-             json_type: JsonType::Object,
-             val: HashMap::<String, Box<Json>>::new(),
+            json_type: JsonType::Object,
+            val: HashMap::<String, Box<Json>>::new(),
         }
     }
 
-    pub fn insert(&mut self, name: &str, val: Box<Json>) ->() {
+    pub fn insert(&mut self, name: &str, val: Box<Json>) -> () {
         self.val.insert(name.to_string(), val);
     }
-
 }
 
 impl JsonArray {
@@ -132,6 +131,4 @@ impl JsonArray {
     pub fn push(&mut self, val: Box<Json>) -> () {
         self.val.push(val);
     }
-
 }
-
