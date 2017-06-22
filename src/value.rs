@@ -1,52 +1,49 @@
 use std::collections::HashMap;
 
 #[derive(Debug)]
-pub enum Json_Type {
-    string,
-    number,
-    object,
-    array,
-    boolean,
-    null,
+pub enum JsonType {
+    String,
+    Number,
+    Object,
+    Array,
+    Boolean,
+    Null,
+    Error,
 }
 
-pub struct Json_Terminal {
-    pub json_type: Json_Type,
+pub struct JsonTerminal {
+    pub json_type: JsonType,
     pub val: String,
 }
 
-pub struct Json_Object {
-    json_type: Json_Type,
-    val: HashMap<String, Box<json>>,
+pub struct JsonObject {
+    json_type: JsonType,
+    val: HashMap<String, Box<Json>>,
 }
 
-pub struct Json_Array {
-    json_type: Json_Type,
-    val: Vec<Box<json>>,
+pub struct JsonArray {
+    json_type: JsonType,
+    val: Vec<Box<Json>>,
 }
 
-pub struct Json_Value {
-    pub val: Box<json>,
-}
-
-pub trait json {
+pub trait Json {
     fn get_value(&self) -> &str;
-    fn get_type(&self) -> &Json_Type;
-    fn get_path(&self, path: &str) -> Result<&json, &'static str>;
+    fn get_type(&self) -> &JsonType;
+    fn get_path(&self, path: &str) -> Result<&Json, &'static str>;
     fn print_val(&self) -> ();
 }
 
-impl json for Json_Terminal {
+impl Json for JsonTerminal {
     fn get_value(&self) -> &str {
         self.val.as_str()
     }
 
-    fn get_type(&self) -> &Json_Type {
+    fn get_type(&self) -> &JsonType {
         &self.json_type
     }
 
-    fn get_path(&self, path: &str) -> Result<&json, &'static str> {
-        println!("Getting {}",path);
+    fn get_path(&self, path: &str) -> Result<&Json, &'static str> {
+        println!("Getting {} on a JSON terminal",path);
         let error_string = "Something happened";
         Err(error_string)
     }
@@ -56,17 +53,17 @@ impl json for Json_Terminal {
     }
 }
 
-impl json for Json_Object {
+impl Json for JsonObject {
     fn get_value(&self) -> &str {
         "this is an object"
     }
     
-    fn get_type(&self) -> &Json_Type {
+    fn get_type(&self) -> &JsonType {
         &self.json_type
     }
 
-    fn get_path(&self, path: &str) -> Result<&json, &'static str> {
-         println!("Getting {}",path);
+    fn get_path(&self, path: &str) -> Result<&Json, &'static str> {
+         println!("Getting key: {} on a JSON Object",path);
         match self.val.get(&path.to_string()) {
             Some(result) => Ok(&**result),
             None => Err("Something happened"),
@@ -82,18 +79,18 @@ impl json for Json_Object {
     }
 }
 
-impl json for Json_Array {
+impl Json for JsonArray {
     fn get_value(&self) -> &str {
         "this is an array"
     }
     
-    fn get_type(&self) -> &Json_Type {
+    fn get_type(&self) -> &JsonType {
         &self.json_type
     }
 
-    fn get_path(&self, path: &str) -> Result<&json, &'static str> {
+    fn get_path(&self, path: &str) -> Result<&Json, &'static str> {
         let index = path.parse::<usize>();
-        println!("Getting??? {}",path);
+        println!("Getting index: {} on a JSON array",path);
         if let Ok(i) = index {
             match self.val.get(i) {
                 Some(result) => Ok(&**result),
@@ -110,29 +107,29 @@ impl json for Json_Array {
 }
 
 
-impl Json_Object {
-    pub fn new() -> Json_Object {
-        Json_Object {
-             json_type: Json_Type::object,
-             val: HashMap::<String, Box<json>>::new(),
+impl JsonObject {
+    pub fn new() -> JsonObject {
+        JsonObject {
+             json_type: JsonType::Object,
+             val: HashMap::<String, Box<Json>>::new(),
         }
     }
 
-    pub fn insert(&mut self, name: &str, val: Box<json>) ->() {
+    pub fn insert(&mut self, name: &str, val: Box<Json>) ->() {
         self.val.insert(name.to_string(), val);
     }
 
 }
 
-impl Json_Array {
-    pub fn new() -> Json_Array {
-        Json_Array {
-            json_type: Json_Type::array,
-            val: Vec::<Box<json>>::new(),
+impl JsonArray {
+    pub fn new() -> JsonArray {
+        JsonArray {
+            json_type: JsonType::Array,
+            val: Vec::<Box<Json>>::new(),
         }
     }
 
-    pub fn push(&mut self, val: Box<json>) -> () {
+    pub fn push(&mut self, val: Box<Json>) -> () {
         self.val.push(val);
     }
 
