@@ -1,14 +1,14 @@
 use value::{Json, JsonObject, JsonArray};
 use token::{Enums, Token};
 
-type TokenIter<'a> = Iterator<Item = &'a Token>;
+type TokenIter<'a> = Iterator<Item = &'a Token<'a>>;
 
 fn parse_terminal(token: &Token) -> Box<Json> {
     Box::new(token.val.to_string())
 }
 
 fn parse_array<'a, I>(tokens: &mut I) -> Box<Json>
-    where I: Iterator<Item = &'a Token>
+    where I: Iterator<Item = &'a Token<'a>>
 {
     //println!("Parsing array");
     let mut json_array = JsonArray::new();
@@ -34,7 +34,7 @@ fn parse_array<'a, I>(tokens: &mut I) -> Box<Json>
 }
 
 fn parse_object<'a, I>(tokens: &mut I) -> Box<Json>
-    where I: Iterator<Item = &'a Token>
+    where I: Iterator<Item = &'a Token<'a>>
 {
     //println!{"Parsing object"};
     let mut json_object = JsonObject::new();
@@ -55,7 +55,7 @@ fn parse_object<'a, I>(tokens: &mut I) -> Box<Json>
 }
 
 pub fn parse_value<'a, I>(token: &Token, tokens: &mut I) -> Box<Json>
-    where I: Iterator<Item = &'a Token>
+    where I: Iterator<Item = &'a Token<'a>>
 {
     //println!("{:?}", token.enum_type);
     match token.enum_type {
