@@ -1,6 +1,11 @@
 use std::collections::HashMap;
+use std::iter;
+use regex::Regex;
 
-#[derive(Debug)]
+pub type JsonObject = HashMap<String, Box<Json>>;
+pub type JsonArray = Vec<Box<Json>>;
+
+#[derive(Copy, Clone, Debug)]
 pub enum JsonType {
     String,
     Number,
@@ -11,68 +16,71 @@ pub enum JsonType {
     Error,
 }
 
-pub struct JsonTerminal {
-    pub json_type: JsonType,
-    pub val: String,
-}
-
-pub struct JsonObject {
-    json_type: JsonType,
-    val: HashMap<String, Box<Json>>,
-}
-
-pub struct JsonArray {
-    json_type: JsonType,
-    val: Vec<Box<Json>>,
-}
-
 pub trait Json {
     fn get_value(&self) -> &str;
-    fn get_type(&self) -> &JsonType;
+    fn get_type(&self) -> JsonType;
     fn get_path(&self, path: &str) -> Result<&Json, &'static str>;
     fn print_val(&self) -> ();
 }
 
-impl Json for JsonTerminal {
+impl Json for String {
     fn get_value(&self) -> &str {
-        self.val.as_str()
+        &self
     }
 
-    fn get_type(&self) -> &JsonType {
-        &self.json_type
+    fn get_type(&self) -> JsonType {
+        lazy_static! {
+            static ref RE_STRING: Regex = Regex::new(r#"^"(\\.|[^\\"])*"#).unwrap();
+            static ref RE_NUM: Regex = Regex::new(r#"^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?"#).unwrap();
+        }
+        if (self == "true") | (self == "false") {
+            JsonType::Boolean
+        } else if self == "null" {
+            JsonType::Null
+        } else if RE_STRING.is_match(self) {
+            JsonType::String
+        } else if RE_NUM.is_match(self) {
+            JsonType::Number
+        } else {
+            JsonType::Error
+        }
     }
-
+    
     fn get_path(&self, path: &str) -> Result<&Json, &'static str> {
         println!("Getting {} on a JSON terminal", path);
-        let error_string = "Something happened";
+        let error_string = "Could not get path";
         Err(error_string)
     }
 
     fn print_val(&self) -> () {
-        println!("{}", self.val);
+        println!("{}", self);
     }
 }
 
 impl Json for JsonObject {
     fn get_value(&self) -> &str {
+        let mut object_iter = self.iter();
+        let mut object_strings = object_iter.map(|(k, v)| String::from(k.as_str()).push_str(v.get_value()));
+        let mut json_string = String::new();
+        json_string.push('{');
+        let mut object_sep = object_strings.zip(iter::repeat(","));
         "this is an object"
     }
 
-    fn get_type(&self) -> &JsonType {
-        &self.json_type
+    fn get_type(&self) -> JsonType {
+        JsonType::Object
     }
-
+    
     fn get_path(&self, path: &str) -> Result<&Json, &'static str> {
         println!("Getting key: {} on a JSON Object", path);
-        match self.val.get(&path.to_string()) {
+        match self.get(&path.to_string()) {
             Some(result) => Ok(&**result),
-            None => Err("Something happened"),
+            None => Err("Could not get path"),
         }
-
     }
 
     fn print_val(&self) -> () {
-        for (key, val) in &self.val {
+        for (key, val) in self {
             println!("Key: {}, val:", key);
             val.print_val();
         }
@@ -84,51 +92,24 @@ impl Json for JsonArray {
         "this is an array"
     }
 
-    fn get_type(&self) -> &JsonType {
-        &self.json_type
+    fn get_type(&self) -> JsonType {
+        JsonType::Array
     }
 
     fn get_path(&self, path: &str) -> Result<&Json, &'static str> {
         let index = path.parse::<usize>();
         println!("Getting index: {} on a JSON array", path);
         if let Ok(i) = index {
-            match self.val.get(i) {
+            match self.get(i) {
                 Some(result) => Ok(&**result),
-                None => Err("Something happened"),
+                None => Err("Could not get path"),
             }
         } else {
-            Err("Something happened")
+            Err("Could not get path")
         }
     }
 
     fn print_val(&self) -> () {
         println!("This is an array");
-    }
-}
-
-
-impl JsonObject {
-    pub fn new() -> JsonObject {
-        JsonObject {
-            json_type: JsonType::Object,
-            val: HashMap::<String, Box<Json>>::new(),
-        }
-    }
-
-    pub fn insert(&mut self, name: &str, val: Box<Json>) -> () {
-        self.val.insert(name.to_string(), val);
-    }
-}
-
-impl JsonArray {
-    pub fn new() -> JsonArray {
-        JsonArray {
-            json_type: JsonType::Array,
-            val: Vec::<Box<Json>>::new(),
-        }
-    }
-
-    pub fn push(&mut self, val: Box<Json>) -> () {
-        self.val.push(val);
     }
 }

@@ -1,4 +1,4 @@
-use regex::Regex;
+use regex::{Regex};
 
 #[derive(Debug,PartialEq)]
 pub enum Enums {
@@ -8,11 +8,7 @@ pub enum Enums {
     RBRACE,
     LBRACKET,
     RBRACKET,
-    STRING,
-    NUMBER,
-    TRUE,
-    FALSE,
-    NULL,
+    TERMINAL,
 }
 
 pub struct Token {
@@ -22,15 +18,16 @@ pub struct Token {
 
 pub fn tokenize(json_string: &str) -> Vec<Token> {
 
-    let re_string = Regex::new(r#"^"(\\.|[^\\"])*""#).unwrap();
-    let re_num = Regex::new(r#"^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?"#).unwrap();
+    let re_string = Regex::new(r#"(^"(\\.|[^\\"])*")"#).unwrap();
+    let re_number = Regex::new(r#"(^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?)"#).unwrap();
 
     let mut tokens = Vec::new();
-    let mut cur_string = json_string;
+    //remove whitespace from the end to avoid parsing
+    let mut cur_string = json_string.trim_right();
 
     while !cur_string.is_empty() {
         cur_string = &mut cur_string.trim_left();
-        println!("{}", cur_string);
+        //println!("{}", cur_string);
         if cur_string.starts_with(",") {
             tokens.push(Token {
                 enum_type: Enums::COMMA,
@@ -67,43 +64,43 @@ pub fn tokenize(json_string: &str) -> Vec<Token> {
                 val: "}".to_string(),
             });
             cur_string = &cur_string[1..];
-        } else if cur_string.starts_with("true") {
-            tokens.push(Token {
-                enum_type: Enums::TRUE,
-                val: "true".to_string(),
-            });
+        }   else if cur_string.starts_with("true") {
+                tokens.push(Token {
+                    enum_type: Enums::TERMINAL,
+                    val: "true".to_string(),
+                });
             cur_string = &cur_string[4..];
         } else if cur_string.starts_with("false") {
-            tokens.push(Token {
-                enum_type: Enums::FALSE,
-                val: "false".to_string(),
-            });
+                tokens.push(Token {
+                    enum_type: Enums::TERMINAL,
+                    val: "false".to_string(),
+                });
             cur_string = &cur_string[5..];
         } else if cur_string.starts_with("null") {
-            tokens.push(Token {
-                enum_type: Enums::NULL,
-                val: "null".to_string(),
-            });
-            cur_string = &cur_string[4..];
-        } else if re_string.is_match(cur_string) {
-            let re_match = re_string.find(cur_string).unwrap();
-            tokens.push(Token {
-                enum_type: Enums::STRING,
-                val: re_match.as_str().trim_matches('"').to_string(),
-            });
-            cur_string = &cur_string[re_match.end()..];
-        } else if re_num.is_match(cur_string) {
-            let re_match = re_num.find(cur_string).unwrap();
-            tokens.push(Token {
-                enum_type: Enums::NUMBER,
-                val: re_match.as_str().to_string(),
-            });
+                tokens.push(Token {
+                    enum_type: Enums::TERMINAL,
+                    val: "null".to_string(),
+                });
+            cur_string = &cur_string[5..];
+        } else if cur_string.starts_with("\"") {
+                let re_match = re_string.find(cur_string).unwrap();
+                tokens.push(Token {
+                    enum_type: Enums::TERMINAL,
+                    val: re_match.as_str().to_string(),
+                });
             cur_string = &cur_string[re_match.end()..];
         } else {
-            println!("Something happened");
-            break;
+                let re_match = re_number.find(cur_string).unwrap();
+                tokens.push(Token {
+                    enum_type: Enums::TERMINAL,
+                    val: re_match.as_str().to_string(),
+                });
+            cur_string = &cur_string[re_match.end()..];
         }
     }
 
+    println!("Finished tokens");
+
     tokens
 }
+
