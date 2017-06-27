@@ -1,9 +1,16 @@
-## Installation
+## Building
 [Install Rust](https://www.rust-lang.org/en-US/install.html) and then run:
 
 ```bash
-cargo run
+cargo build
 ```
 
+from the root directory
+
 ##Usage
-not working yet!
+```bash
+json [filename]
+```
+
+then enter a path at the prompt
+
