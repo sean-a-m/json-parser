@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use regex::Regex;
 
-pub type JsonObject = HashMap<String, Box<Json>>;
-pub type JsonArray = Vec<Box<Json>>;
+pub type JsonObject = HashMap<String, Box<Json + Send>>;
+pub type JsonArray = Vec<Box<Json + Send>>;
 
 #[derive(Copy, Clone, PartialEq)]
 pub enum JsonType {

@@ -3,19 +3,28 @@ extern crate lazy_static;
 extern crate regex;
 extern crate itertools;
 extern crate time;
+extern crate crossbeam;
 
 mod value;
 mod token;
 mod parser;
 
 use std::io;
-use parser::parse_value;
+use parser::parse;
+//use parser_senpai;
 use value::Json;
-use token::tokenize;
+use token::token_chan;
 use std::env;
 use std::io::prelude::*;
 use std::fs::File;
 use time::PreciseTime;
+
+use token::Token;
+
+use std::sync::mpsc::{Sender, Receiver};
+use std::sync::{mpsc, Arc};
+use std::thread;
+
 
 fn get_jpath<'a>(path: &str, json_val: &'a Json) -> Result<String, &'static str> {
     if path.len() > 0 {
@@ -43,17 +52,24 @@ fn load_file() -> Result<File, std::io::Error> {
     }
 }
 
-fn parse_json(buffer: &mut String) -> Box<Json> {
+fn parse_json<'a>(buffer: &'a str) -> Box<Json + Send> {
 
-    let tokens = tokenize(buffer);
-    let mut tokens_iter = tokens.iter();
 
     let p_start = PreciseTime::now();
-    let json_value = parse_value(&tokens_iter.next().unwrap(), &mut tokens_iter);
+
+    let (tx, rx): (Sender<Token>, Receiver<Token>) = mpsc::channel();
+
+    let json_value = crossbeam::scope(|scope| {
+        scope.spawn(|| {
+            token_chan(buffer, tx);
+        });
+        parse(rx)
+    });
+ 
     let p_end = PreciseTime::now();
     println!("Finished parsing in: {}", p_start.to(p_end));
-    json_value
 
+   json_value
 }
 
 fn main() {
@@ -62,8 +78,8 @@ fn main() {
 
     let mut buffer = String::new();
     f.read_to_string(&mut buffer).unwrap();
-
-    let parsed_json = parse_json(&mut buffer);
+    
+    let parsed_json = parse_json(&buffer);
 
     println!("\n");
     loop {

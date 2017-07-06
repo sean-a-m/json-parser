@@ -1,14 +1,18 @@
 use value::{Json, JsonObject, JsonArray};
 use token::{Enums, Token};
 
+use std::sync::mpsc::{Sender, Receiver};
+use std::sync::{mpsc, Arc};
+use std::thread;
+
 //type TokenIter<'a> = Iterator<Item = &'a Token<'a>>;
 
-fn parse_terminal(token: &Token) -> Box<Json> {
+fn parse_terminal(token: &Token) -> Box<Json + Send> {
     Box::new(token.val.to_string())
 }
 
-fn parse_array<'a, I>(tokens: &mut I) -> Box<Json>
-    where I: Iterator<Item = &'a Token<'a>>
+fn parse_array<'a, I>(tokens: &mut I) -> Box<Json + Send>
+    where I: Iterator<Item = Token<'a>>
 {
     let mut json_array = JsonArray::new();
 
@@ -26,8 +30,8 @@ fn parse_array<'a, I>(tokens: &mut I) -> Box<Json>
     Box::new(json_array)
 }
 
-fn parse_object<'a, I>(tokens: &mut I) -> Box<Json>
-    where I: Iterator<Item = &'a Token<'a>>
+fn parse_object<'a, I>(tokens: &mut I) -> Box<Json + Send>
+    where I: Iterator<Item = Token<'a>>
 {
     let mut json_object = JsonObject::new();
     loop {
@@ -44,8 +48,8 @@ fn parse_object<'a, I>(tokens: &mut I) -> Box<Json>
     Box::new(json_object)
 }
 
-pub fn parse_value<'a, I>(token: &Token, tokens: &mut I) -> Box<Json>
-    where I: Iterator<Item = &'a Token<'a>>
+pub fn parse_value<'a, I>(token: &Token, tokens: &mut I) -> Box<Json + Send>
+    where I: Iterator<Item = Token<'a>>
 {
     //println!("{:?}", token.enum_type);
     match token.enum_type {
@@ -58,4 +62,12 @@ pub fn parse_value<'a, I>(token: &Token, tokens: &mut I) -> Box<Json>
         }
     }
 
+}
+
+pub fn parse<'a>(rx: Receiver<Token<'a>>) -> Box<Json + Send> {
+    println!("started parsing!");
+    let mut tokens_iter = rx.iter();
+    let val = parse_value(&tokens_iter.next().unwrap(), &mut tokens_iter);
+    println!("finished parsing!");
+    val
 }
